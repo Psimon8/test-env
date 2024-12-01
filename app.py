@@ -4,22 +4,22 @@ import re
 from io import BytesIO
 
 # Helper function to categorize values
-def get_category(rank):
-    if 1 <= rank <= 3:
+def get_category(position):
+    if 1 <= position <= 3:
         return "1-3"
-    elif 4 <= rank <= 5:
+    elif 4 <= position <= 5:
         return "4-5"
-    elif 6 <= rank <= 10:
+    elif 6 <= position <= 10:
         return "6-10"
-    elif 11 <= rank <= 20:
+    elif 11 <= position <= 20:
         return "11-20"
-    elif rank >= 21:
+    elif position >= 21:
         return "21+"
     return None
 
 # Function to process the data
 def process_data(data, regex_pattern):
-    data['Category'] = data['Rank'].apply(get_category)
+    data['Category'] = data['Position'].apply(get_category)
     data['Marque/Hors Marque'] = data['Keyword'].apply(
         lambda x: "Marque" if re.search(regex_pattern, str(x), re.IGNORECASE) else "Hors Marque"
     )
@@ -45,7 +45,7 @@ if uploaded_file:
     st.dataframe(df)
 
     # Ensure necessary columns exist
-    if "Keyword" in df.columns and "Rank" in df.columns:
+    if "Keyword" in df.columns and "Position" in df.columns:
         # Step 2: Input regex for "Marque"
         regex_pattern = st.text_input("Enter regex pattern for 'Marque'", ".*sara.*|.*lavoi.*|.*ponia.*")
 
@@ -66,4 +66,4 @@ if uploaded_file:
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
     else:
-        st.error("The uploaded file must contain 'Keyword' and 'Rank' columns.")
+        st.error("The uploaded file must contain 'Keyword' and 'Position' columns.")
