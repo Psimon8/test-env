@@ -35,22 +35,30 @@ def process_data(data, regex_pattern):
     # Group by Category and Marque/Hors Marque
     summary = data.groupby(['Category', 'Marque/Hors Marque']).size().unstack(fill_value=0)
 
-    # Display summary
+    # Ensure the summary is displayed in the specified order
+    category_order = ["Top 1", "Position 2-3", "Position 4-5", "Position 6-10", "Position 11-20", "21+"]
+    summary = summary.reindex(category_order)
+
+    # Display summary with dropdown and text input
     st.write("Summary Marque / Hors Marque:")
+    col1, col2 = st.columns(2)
+    with col1:
+        selected_category = st.selectbox("Select Category", category_order)
+    with col2:
+        keyword = st.text_input("Enter Keyword (regex supported)")
+
     st.write(summary)
 
-    # Debugging statements
-    st.write("Data for Marque:")
-    marque_data = data[data['Marque/Hors Marque'] == 'Marque']
-    st.write(marque_data)
-
-    st.write("Data for Hors Marque:")
-    hors_marque_data = data[data['Marque/Hors Marque'] == 'Hors Marque']
-    st.write(hors_marque_data)
-
-    # Display bar charts
-    st.bar_chart(marque_data)
-    st.bar_chart(hors_marque_data.set_index('Category'))
+    # Display data for Marque and Hors Marque side by side
+    col1, col2 = st.columns(2)
+    with col1:
+        st.write("Data for Marque:")
+        marque_data = data[data['Marque/Hors Marque'] == 'Marque']
+        st.dataframe(marque_data)
+    with col2:
+        st.write("Data for Hors Marque:")
+        hors_marque_data = data[data['Marque/Hors Marque'] == 'Hors Marque']
+        st.dataframe(hors_marque_data)
 
     # Add download button
     csv = data.to_csv(index=False).encode('utf-8')
