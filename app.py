@@ -39,36 +39,6 @@ def process_data(data, regex_pattern):
     category_order = ["Top 1", "Position 2-3", "Position 4-5", "Position 6-10", "Position 11-20", "21+"]
     summary = summary.reindex(category_order)
 
-    # Display summary with dropdown and text input
-    st.write("Summary Marque / Hors Marque:")
-    col1, col2 = st.columns(2)
-    with col1:
-        selected_category = st.selectbox("Select Category", category_order)
-    with col2:
-        keyword = st.text_input("Enter Keyword (regex supported)")
-
-    st.write(summary)
-
-    # Display data for Marque and Hors Marque side by side
-    col1, col2 = st.columns(2)
-    with col1:
-        st.write("Data for Marque:")
-        marque_data = data[data['Marque/Hors Marque'] == 'Marque']
-        st.dataframe(marque_data)
-    with col2:
-        st.write("Data for Hors Marque:")
-        hors_marque_data = data[data['Marque/Hors Marque'] == 'Hors Marque']
-        st.dataframe(hors_marque_data)
-
-    # Add download button
-    csv = data.to_csv(index=False).encode('utf-8')
-    st.download_button(
-        label="Download data as CSV",
-        data=csv,
-        file_name='processed_data.csv',
-        mime='text/csv',
-    )
-
     return data, summary
 
 # Export to Excel
@@ -86,8 +56,6 @@ st.title("Analyse Marque / Hors Marque")
 uploaded_file = st.file_uploader("Upload your XLSX file", type=["xlsx"])
 if uploaded_file:
     df = pd.read_excel(uploaded_file)
-    st.write("Uploaded Data:")
-    st.dataframe(df)
 
     # Ensure necessary columns exist
     if "Keyword" in df.columns and "Position" in df.columns and "Search Volume" in df.columns:
@@ -97,11 +65,33 @@ if uploaded_file:
         # Step 3: Process data
         processed_data, summary = process_data(df, regex_pattern)
 
-        st.write("Processed Data:")
-        st.dataframe(processed_data)
+        # Display summary with dropdown and text input
+        st.write("Summary Marque / Hors Marque:")
+        col1, col2 = st.columns(2)
+        with col1:
+            selected_category = st.selectbox("Select Category", ["Top 1", "Position 2-3", "Position 4-5", "Position 6-10", "Position 11-20", "21+"])
+        with col2:
+            keyword = st.text_input("Enter Keyword (regex supported)")
 
-        st.write("Summary:")
-        st.dataframe(summary)
+        # Display data for Marque and Hors Marque side by side
+        col1, col2 = st.columns(2)
+        with col1:
+            st.write("Data for Marque:")
+            marque_data = data[data['Marque/Hors Marque'] == 'Marque']
+            edited_marque_data = st.experimental_data_editor(marque_data)
+        with col2:
+            st.write("Data for Hors Marque:")
+            hors_marque_data = data[data['Marque/Hors Marque'] == 'Hors Marque']
+            edited_hors_marque_data = st.experimental_data_editor(hors_marque_data)
+
+        # Add download button
+        csv = processed_data.to_csv(index=False).encode('utf-8')
+        st.download_button(
+            label="Download data as CSV",
+            data=csv,
+            file_name='processed_data.csv',
+            mime='text/csv',
+        )
 
         # Step 5: Export processed data
         st.download_button(
