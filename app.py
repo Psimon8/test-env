@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import re
 from io import BytesIO
-import matplotlib.pyplot as plt
 
 # Helper function to categorize values
 def get_category(position):
@@ -83,7 +82,7 @@ if uploaded_file:
     st.dataframe(df)
 
     # Ensure necessary columns exist
-    if "Keyword" in df.columns and "Position" in df.columns:
+    if "Keyword" in df.columns and "Position" in df.columns and "Search Volume" in df.columns:
         # Step 2: Input regex for "Marque"
         regex_pattern = st.text_input("Enter regex pattern for 'Marque'", ".*sara.*|.*lavoi.*|.*ponia.*")
 
@@ -95,19 +94,6 @@ if uploaded_file:
 
         st.write("Summary:")
         st.dataframe(summary)
-
-        # Step 4: Display bar chart of the summary
-        st.write("Summary Bar Chart:")
-        summary = summary.reindex(
-            ["Top 1", "Position 2-3", "Position 4-5", "Position 6-10", "Position 11-20", "21+"],
-            fill_value=0
-        )
-        summary.plot(kind='bar', figsize=(10, 6))
-        plt.title("Répartition des mots-clés")
-        plt.ylabel("Nombre de mots-clés")
-        plt.xlabel("Catégorie")
-        plt.xticks(rotation=45)
-        st.pyplot(plt)
 
         # Step 5: Export processed data
         st.download_button(
