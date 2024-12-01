@@ -60,43 +60,41 @@ if uploaded_file:
     # Ensure necessary columns exist
     if "Keyword" in df.columns and "Position" in df.columns and "Search Volume" in df.columns:
         # Step 2: Input regex for "Marque"
-        regex_pattern = st.text_input("Enter regex pattern for 'Marque'", "regex-friendly .*")
+        col1, col2 = st.columns(2)
+        with col1:
+            regex_pattern = st.text_input("Enter regex pattern for 'Marque'", "regex-friendly .*")
+            selected_category = st.selectbox("Select Category", ["All"] + ["Top 1", "Position 2-3", "Position 4-5", "Position 6-10", "Position 11-20", "21+"])
+            keyword = st.text_input("Enter Keyword (regex supported)")
 
         # Step 3: Process data
         processed_data, summary = process_data(df, regex_pattern)
 
-        # Display summary with dropdown and text input
-        st.write("Summary Marque / Hors Marque:")
-        col1, col2 = st.columns(2)
-        with col1:
-            selected_category = st.selectbox("Select Category", ["All"] + ["Top 1", "Position 2-3", "Position 4-5", "Position 6-10", "Position 11-20", "21+"])
-        with col2:
-            keyword = st.text_input("Enter Keyword (regex supported)")
-
         # Filter data based on selected category and keyword
+        filtered_data = processed_data.copy()
         if selected_category != "All":
-            processed_data = processed_data[processed_data['Category'] == selected_category]
+            filtered_data = filtered_data[filtered_data['Category'] == selected_category]
         if keyword:
-            processed_data = processed_data[processed_data['Keyword'].str.contains(keyword, case=False, na=False)]
+            filtered_data = filtered_data[filtered_data['Keyword'].str.contains(keyword, case=False, na=False)]
 
         # Display summary table
-        st.write("Summary Table:")
-        summary_table = processed_data['Category'].value_counts().reindex(["Top 1", "Position 2-3", "Position 4-5", "Position 6-10", "Position 11-20", "21+"], fill_value=0)
-        st.dataframe(summary_table)
+        with col2:
+            st.write("Summary Table:")
+            summary_table = filtered_data.groupby(['Category', 'Marque/Hors Marque']).size().unstack(fill_value=0).reindex(["Top 1", "Position 2-3", "Position 4-5", "Position 6-10", "Position 11-20", "21+"], fill_value=0)
+            st.dataframe(summary_table)
 
         # Display data for Marque and Hors Marque side by side
         col1, col2 = st.columns(2)
         with col1:
             st.write("Data for Marque:")
-            marque_data = processed_data[processed_data['Marque/Hors Marque'] == 'Marque']
+            marque_data = filtered_data[filtered_data['Marque/Hors Marque'] == 'Marque']
             st.dataframe(marque_data)
         with col2:
             st.write("Data for Hors Marque:")
-            hors_marque_data = processed_data[processed_data['Marque/Hors Marque'] == 'Hors Marque']
+            hors_marque_data = filtered_data[filtered_data['Marque/Hors Marque'] == 'Hors Marque']
             st.dataframe(hors_marque_data)
 
         # Add download button
-        csv = processed_data.to_csv(index=False).encode('utf-8')
+        csv = filtered_data.to_csv(index=False).encode('utf-8')
         st.download_button(
             label="Download data as CSV",
             data=csv,
@@ -107,7 +105,7 @@ if uploaded_file:
         # Step 5: Export processed data
         st.download_button(
             label="Download Processed Data",
-            data=export_to_excel(processed_data, summary),
+            data=export_to_excel(filtered_data, summary),
             file_name="processed_data.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )

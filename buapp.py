@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import re
 from io import BytesIO
-import matplotlib.pyplot as plt
 
 # Helper function to categorize values
 def get_category(position):
@@ -33,14 +32,13 @@ def process_data(data, regex_pattern):
         columns.insert(columns.index("Search Volume") + 2, columns.pop(columns.index("Marque/Hors Marque")))
         data = data[columns]
 
-    # Debugging statements
-    st.write("DataFrame structure:")
-    st.write(data.head())
-    st.write("Columns in DataFrame:")
-    st.write(data.columns)
-
     # Group by Category and Marque/Hors Marque
     summary = data.groupby(['Category', 'Marque/Hors Marque']).size().unstack(fill_value=0)
+
+    # Ensure the summary is displayed in the specified order
+    category_order = ["Top 1", "Position 2-3", "Position 4-5", "Position 6-10", "Position 11-20", "21+"]
+    summary = summary.reindex(category_order)
+
     return data, summary
 
 # Export to Excel
@@ -58,35 +56,53 @@ st.title("Analyse Marque / Hors Marque")
 uploaded_file = st.file_uploader("Upload your XLSX file", type=["xlsx"])
 if uploaded_file:
     df = pd.read_excel(uploaded_file)
-    st.write("Uploaded Data:")
-    st.dataframe(df)
 
     # Ensure necessary columns exist
-    if "Keyword" in df.columns and "Position" in df.columns:
+    if "Keyword" in df.columns and "Position" in df.columns and "Search Volume" in df.columns:
         # Step 2: Input regex for "Marque"
-        regex_pattern = st.text_input("Enter regex pattern for 'Marque'", ".*sara.*|.*lavoi.*|.*ponia.*")
+        regex_pattern = st.text_input("Enter regex pattern for 'Marque'", "regex-friendly .*")
 
         # Step 3: Process data
         processed_data, summary = process_data(df, regex_pattern)
 
-        st.write("Processed Data:")
-        st.dataframe(processed_data)
+        # Display summary with dropdown and text input
+        st.write("Summary Marque / Hors Marque:")
+        col1, col2 = st.columns(2)
+        with col1:
+            selected_category = st.selectbox("Select Category", ["All"] + ["Top 1", "Position 2-3", "Position 4-5", "Position 6-10", "Position 11-20", "21+"])
+        with col2:
+            keyword = st.text_input("Enter Keyword (regex supported)")
 
-        st.write("Summary:")
-        st.dataframe(summary)
+        # Filter data based on selected category and keyword
+        if selected_category != "All":
+            processed_data = processed_data[processed_data['Category'] == selected_category]
+        if keyword:
+            processed_data = processed_data[processed_data['Keyword'].str.contains(keyword, case=False, na=False)]
 
-        # Step 4: Display bar chart of the summary
-        st.write("Summary Bar Chart:")
-        summary = summary.reindex(
-            ["Top 1", "Position 2-3", "Position 4-5", "Position 6-10", "Position 11-20", "21+"],
-            fill_value=0
+        # Display summary table
+        st.write("Summary Table:")
+        summary_table = processed_data['Category'].value_counts().reindex(["Top 1", "Position 2-3", "Position 4-5", "Position 6-10", "Position 11-20", "21+"], fill_value=0)
+        st.dataframe(summary_table)
+
+        # Display data for Marque and Hors Marque side by side
+        col1, col2 = st.columns(2)
+        with col1:
+            st.write("Data for Marque:")
+            marque_data = processed_data[processed_data['Marque/Hors Marque'] == 'Marque']
+            st.dataframe(marque_data)
+        with col2:
+            st.write("Data for Hors Marque:")
+            hors_marque_data = processed_data[processed_data['Marque/Hors Marque'] == 'Hors Marque']
+            st.dataframe(hors_marque_data)
+
+        # Add download button
+        csv = processed_data.to_csv(index=False).encode('utf-8')
+        st.download_button(
+            label="Download data as CSV",
+            data=csv,
+            file_name='processed_data.csv',
+            mime='text/csv',
         )
-        summary.plot(kind='bar', figsize=(10, 6))
-        plt.title("Répartition des mots-clés")
-        plt.ylabel("Nombre de mots-clés")
-        plt.xlabel("Catégorie")
-        plt.xticks(rotation=45)
-        st.pyplot(plt)
 
         # Step 5: Export processed data
         st.download_button(
