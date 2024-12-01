@@ -28,10 +28,18 @@ def process_data(data, regex_pattern):
     )
     # Reorder columns: place Category and Marque/Hors Marque after Search Volume
     if "Search Volume" in data.columns:
-        cols = list(data.columns)
-        sv_index = cols.index("Search Volume")
-        cols = cols[:sv_index + 1] + ["Category", "Marque/Hors Marque"] + cols[sv_index + 1:]
-        data = data[cols]
+        columns = list(data.columns)
+        columns.insert(columns.index("Search Volume") + 1, columns.pop(columns.index("Category")))
+        columns.insert(columns.index("Search Volume") + 2, columns.pop(columns.index("Marque/Hors Marque")))
+        data = data[columns]
+
+    # Debugging statements
+    st.write("DataFrame structure:")
+    st.write(data.head())
+    st.write("Columns in DataFrame:")
+    st.write(data.columns)
+
+    # Group by Category and Marque/Hors Marque
     summary = data.groupby(['Category', 'Marque/Hors Marque']).size().unstack(fill_value=0)
     return data, summary
 
