@@ -77,11 +77,11 @@ if uploaded_file:
         col1, col2 = st.columns(2)
         with col1:
             st.write("Data for Marque:")
-            marque_data = data[data['Marque/Hors Marque'] == 'Marque']
+            marque_data = processed_data[processed_data['Marque/Hors Marque'] == 'Marque']
             edited_marque_data = st.experimental_data_editor(marque_data)
         with col2:
             st.write("Data for Hors Marque:")
-            hors_marque_data = data[data['Marque/Hors Marque'] == 'Hors Marque']
+            hors_marque_data = processed_data[processed_data['Marque/Hors Marque'] == 'Hors Marque']
             edited_hors_marque_data = st.experimental_data_editor(hors_marque_data)
 
         # Add download button
