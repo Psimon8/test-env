@@ -33,26 +33,14 @@ def process_data(data, regex_pattern):
         columns.insert(columns.index("Search Volume") + 2, columns.pop(columns.index("Marque/Hors Marque")))
         data = data[columns]
 
+    # Debugging statements
+    st.write("DataFrame structure:")
+    st.write(data.head())
+    st.write("Columns in DataFrame:")
+    st.write(data.columns)
+
     # Group by Category and Marque/Hors Marque
     summary = data.groupby(['Category', 'Marque/Hors Marque']).size().unstack(fill_value=0)
-
-    # Display summary
-    st.write("Summary Marque / Hors Marque:")
-    st.write(summary)
-
-    # Display bar charts
-    st.bar_chart(pd.DataFrame(data[data['Marque/Hors Marque'] == 'Marque']))
-    st.bar_chart(pd.DataFrame(data[data['Marque/Hors Marque'] == 'Hors Marque']).set_index('Category'))
-
-    # Add download button
-    csv = data.to_csv(index=False).encode('utf-8')
-    st.download_button(
-        label="Download data as CSV",
-        data=csv,
-        file_name='processed_data.csv',
-        mime='text/csv',
-    )
-
     return data, summary
 
 # Export to Excel
