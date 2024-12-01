@@ -40,9 +40,18 @@ def process_data(data, regex_pattern):
     st.write("Summary Marque / Hors Marque:")
     st.write(summary)
 
+    # Debugging statements
+    st.write("Data for Marque:")
+    marque_data = data[data['Marque/Hors Marque'] == 'Marque']
+    st.write(marque_data)
+
+    st.write("Data for Hors Marque:")
+    hors_marque_data = data[data['Marque/Hors Marque'] == 'Hors Marque']
+    st.write(hors_marque_data)
+
     # Display bar charts
-    st.bar_chart(pd.DataFrame(data[data['Marque/Hors Marque'] == 'Marque']))
-    st.bar_chart(pd.DataFrame(data[data['Marque/Hors Marque'] == 'Hors Marque']).set_index('Category'))
+    st.bar_chart(marque_data)
+    st.bar_chart(hors_marque_data.set_index('Category'))
 
     # Add download button
     csv = data.to_csv(index=False).encode('utf-8')
