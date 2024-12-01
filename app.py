@@ -69,9 +69,20 @@ if uploaded_file:
         st.write("Summary Marque / Hors Marque:")
         col1, col2 = st.columns(2)
         with col1:
-            selected_category = st.selectbox("Select Category", ["Top 1", "Position 2-3", "Position 4-5", "Position 6-10", "Position 11-20", "21+"])
+            selected_category = st.selectbox("Select Category", ["All"] + ["Top 1", "Position 2-3", "Position 4-5", "Position 6-10", "Position 11-20", "21+"])
         with col2:
             keyword = st.text_input("Enter Keyword (regex supported)")
+
+        # Filter data based on selected category and keyword
+        if selected_category != "All":
+            processed_data = processed_data[processed_data['Category'] == selected_category]
+        if keyword:
+            processed_data = processed_data[processed_data['Keyword'].str.contains(keyword, case=False, na=False)]
+
+        # Display summary table
+        st.write("Summary Table:")
+        summary_table = processed_data['Category'].value_counts().reindex(["Top 1", "Position 2-3", "Position 4-5", "Position 6-10", "Position 11-20", "21+"], fill_value=0)
+        st.dataframe(summary_table)
 
         # Display data for Marque and Hors Marque side by side
         col1, col2 = st.columns(2)
