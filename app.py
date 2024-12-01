@@ -84,7 +84,7 @@ if uploaded_file:
     # Ensure necessary columns exist
     if "Keyword" in df.columns and "Position" in df.columns and "Search Volume" in df.columns:
         # Step 2: Input regex for "Marque"
-        regex_pattern = st.text_input("Enter regex pattern for 'Marque'", ".*sara.*|.*lavoi.*|.*ponia.*")
+        regex_pattern = st.text_input("Enter regex pattern for 'Marque'", "regex-friendly .*")
 
         # Step 3: Process data
         processed_data, summary = process_data(df, regex_pattern)
