@@ -78,11 +78,11 @@ if uploaded_file:
         with col1:
             st.write("Data for Marque:")
             marque_data = processed_data[processed_data['Marque/Hors Marque'] == 'Marque']
-            edited_marque_data = st.experimental_data_editor(marque_data)
+            st.dataframe(marque_data)
         with col2:
             st.write("Data for Hors Marque:")
             hors_marque_data = processed_data[processed_data['Marque/Hors Marque'] == 'Hors Marque']
-            edited_hors_marque_data = st.experimental_data_editor(hors_marque_data)
+            st.dataframe(hors_marque_data)
 
         # Add download button
         csv = processed_data.to_csv(index=False).encode('utf-8')
