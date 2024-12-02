@@ -2,3 +2,4 @@ requests
 nltk
 youtube_transcript_api
 pillow
+streamlit
