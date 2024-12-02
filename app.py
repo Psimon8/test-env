@@ -5,6 +5,7 @@ import json
 import openai
 import streamlit as st
 import pandas as pd
+from io import BytesIO
 
 def GPT35(prompt, systeme, secret_key, temperature=0.7, model="gpt-4o-mini", max_tokens=1200):
     url = "https://api.openai.com/v1/chat/completions"
@@ -166,10 +167,17 @@ if st.button("Fetch Videos"):
     if api_key and openai_key and keyword:
         df = process_keyword(api_key, openai_key, keyword, language, max_results)
         st.dataframe(df)
+        
+        # Create a BytesIO buffer to store the Excel file
+        buffer = BytesIO()
+        df.to_excel(buffer, index=False)
+        buffer.seek(0)
+        
         st.download_button(
             label="Download data as Excel",
-            data=df.to_excel(index=False),
-            file_name='youtube_videos.xlsx'
+            data=buffer,
+            file_name='youtube_videos.xlsx',
+            mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
     else:
         st.error("Please provide all required inputs.")
