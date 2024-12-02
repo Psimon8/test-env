@@ -132,19 +132,24 @@ def process_keyword(api_key: str, openai_key: str, keyword: str, language: str, 
     top_videos = get_top_videos(api_key, keyword, language, max_results)
     if top_videos:
         for i, video in enumerate(top_videos, 1):
+            snippet = video.get('snippet', {})
+            statistics = video.get('statistics', {})
+            content_details = video.get('contentDetails', {})
+            video_id = video.get('id', '')
+
             video_data = {
-                "Original Title": video['snippet']['title'],
-                "Optimized Title": generate_optimized_title(openai_key, video['snippet']['title']),
-                "Original Description": video['snippet']['description'],
-                "Optimized Description": generate_optimized_description(openai_key, video['snippet']['description']),
-                "Views": video['statistics']['viewCount'],
-                "Length": video['contentDetails']['duration'],
-                "Published at": video['snippet']['publishedAt'],
-                "Comments": video['statistics']['commentCount'],
-                "URL": f"https://www.youtube.com/watch?v={video['id']}",
-                "Category": video['snippet']['categoryId'],
-                "Channel": video['snippet']['channelTitle'],
-                "Transcript": analyze_video_content(video['id'], language) if i <= max_results else ""
+                "Original Title": snippet.get('title', 'N/A'),
+                "Optimized Title": generate_optimized_title(openai_key, snippet.get('title', 'N/A')),
+                "Original Description": snippet.get('description', 'N/A'),
+                "Optimized Description": generate_optimized_description(openai_key, snippet.get('description', 'N/A')),
+                "Views": statistics.get('viewCount', 'N/A'),
+                "Length": content_details.get('duration', 'N/A'),
+                "Published at": snippet.get('publishedAt', 'N/A'),
+                "Comments": statistics.get('commentCount', 'N/A'),
+                "URL": f"https://www.youtube.com/watch?v={video_id}",
+                "Category": snippet.get('categoryId', 'N/A'),
+                "Channel": snippet.get('channelTitle', 'N/A'),
+                "Transcript": analyze_video_content(video_id, language) if i <= max_results else ""
             }
             data.append(video_data)
     return pd.DataFrame(data)
