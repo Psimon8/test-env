@@ -1,113 +1,170 @@
+import requests
+from typing import List, Optional, Dict
+from youtube_transcript_api import YouTubeTranscriptApi
+import json
+import openai
 import streamlit as st
 import pandas as pd
-import re
-from io import BytesIO
 
-# Helper function to categorize values
-def get_category(position):
-    if position == 1:
-        return "Top 1"
-    elif 2 <= position <= 3:
-        return "Position 2-3"
-    elif 4 <= position <= 5:
-        return "Position 4-5"
-    elif 6 <= position <= 10:
-        return "Position 6-10"
-    elif 11 <= position <= 20:
-        return "Position 11-20"
-    elif position >= 21:
-        return "21+"
-    return None
+def GPT35(prompt, systeme, secret_key, temperature=0.7, model="gpt-4o-mini", max_tokens=1200):
+    url = "https://api.openai.com/v1/chat/completions"
+    
+    payload = {
+        "model": model,
+        "messages": [
+            {"role": "system", "content": systeme},
+            {"role": "user", "content": prompt}
+        ],
+        "temperature": temperature,
+        "max_tokens": max_tokens
+    }
 
-# Function to process the data
-def process_data(data, regex_pattern):
-    data['Category'] = data['Position'].apply(get_category)
-    data['Marque/Hors Marque'] = data['Keyword'].apply(
-        lambda x: "Marque" if re.search(regex_pattern, str(x), re.IGNORECASE) else "Hors Marque"
-    )
-    # Reorder columns: place Category and Marque/Hors Marque after Search Volume
-    if "Search Volume" in data.columns:
-        columns = list(data.columns)
-        columns.insert(columns.index("Search Volume") + 1, columns.pop(columns.index("Category")))
-        columns.insert(columns.index("Search Volume") + 2, columns.pop(columns.index("Marque/Hors Marque")))
-        data = data[columns]
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {secret_key}"
+    }
 
-    # Group by Category and Marque/Hors Marque
-    summary = data.groupby(['Category', 'Marque/Hors Marque']).size().unstack(fill_value=0)
+    response = requests.post(url, headers=headers, json=payload)
+    response_json = response.json()
+    return response_json['choices'][0]['message']['content'].strip()
 
-    # Ensure the summary is displayed in the specified order
-    category_order = ["Top 1", "Position 2-3", "Position 4-5", "Position 6-10", "Position 11-20", "21+"]
-    summary = summary.reindex(category_order)
+def generate_optimized_title(api_key: str, video_title: str) -> str:
+    prompt = (f"Analyse le titre suivant d'une vidéo YouTube et génère une version optimisée pour le référencement, en tenant compte des mots-clés, de l'engagement et des bonnes pratiques SEO : {video_title}")
+    system_message = (f"Vous êtes un assistant de rédaction compétent et expérimenté, spécialisé dans l'optimisation SEO des contenus, "
+    "et particulièrement dans la création de titres optimisés pour YouTube. "
+    "Votre mission est de rédiger des titres engageants, informatifs et performants en termes de SEO, adaptés aux attentes de l'audience et aux bonnes pratiques de référencement. "
+    "Voici le système à suivre pour rédiger une title YouTube optimisée pour le SEO : "
+    "Identifier le sujet principal : Définir le thème ou le sujet de la vidéo et l’objectif principal (informer, expliquer, divertir, vendre). "
+    "Prioriser les mots-clés avec un fort volume de recherche et une concurrence modérée/faible. Considérer les variantes spécifiques liées à la niche ou au public cible. "
+    "Structure optimale de la title : Placer le mot-clé principal au début pour maximiser sa visibilité. "
+    "Ajouter un mot-clé secondaire ou un complément descriptif. Insérer des éléments engageants (chiffres, questions, superlatifs) pour inciter au clic. Utiliser les ? et ! pour impacter. "
+    "Utilisation des bonnes pratiques SEO : Respecter une longueur idéale de 50 à 60 caractères pour éviter la coupure dans les résultats de recherche. "
+    "Utiliser un langage clair, simple et engageant. Éviter les titres vagues ou génériques."
+    "Utiliser 1 ou 2 émojis pertinents pour capter l’attention. Utiliser les majuscules avec parcimonie pour mettre en valeur des mots-clés ou des éléments importants. "
+    "Incorporer des éléments attractifs : Ajouter un aspect unique ou une promesse claire (ex. : 'En 5 minutes', 'Sans expérience'). "
+    "Mettre en avant une solution ou un avantage spécifique. Poser une question pour capter l’attention ou susciter la curiosité. "
+    "Adapter au format vidéo et à l'audience : Pour des tutoriels, utiliser des formats comme 'Comment...', 'Guide pour...', 'Tuto'. "
+    "Pour des classements ou listes, utiliser 'Top X', 'Les X meilleurs...'. Pour des actualités ou analyses, inclure des termes comme '2024', 'Tendances', 'Analyse'."
+    "Réponds UNIQUEMENT avec la Réponse."
+)
 
-    return data, summary
+    optimized_title = GPT35(prompt, system_message, api_key)
+    return optimized_title
 
-# Export to Excel
-def export_to_excel(df, summary):
-    output = BytesIO()
-    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        df.to_excel(writer, index=False, sheet_name='Processed Data')
-        summary.to_excel(writer, sheet_name='Summary')
-    return output.getvalue()
+def generate_optimized_description(api_key: str, video_description: str) -> str:
+    prompt = (f"Analyse la description suivante d'une vidéo YouTube et génère une version optimisée pour le référencement, en tenant compte des mots-clés, de l'engagement et des bonnes pratiques SEO : {video_description}")
+    system_message = (f"Vous êtes un assistant de rédaction compétent et expérimenté, spécialisé dans l'optimisation SEO des contenus, "
+    "et particulièrement dans la création de descriptions optimisées pour YouTube. "
+    "Votre mission est de rédiger des descriptions de vidéos engageantes, informatives et performantes en termes de SEO, adaptées aux attentes de l'audience et aux bonnes pratiques de référencement. "
+    "Voici le système à suivre pour rédiger une description YouTube optimisée pour le SEO : "
+    "Identifier le sujet principal : Définir le thème ou le sujet de la vidéo et l’objectif principal (informer, expliquer, divertir, vendre). "
+    "Inclure des mots-clés pertinents liés au contenu de la vidéo. "
+    "Ajouter des variantes spécifiques pour maximiser la visibilité et couvrir des requêtes similaires. "
+    "Structure optimale de la description : La premiere phrase doit etre une question incitant TRES impactante pour le viewer en lien avec le mot clé principal. Utilise l'emoji 👇 juste apres la question. "
+    "Inclure des hashtags pertinents : Ajouter 8 à 10 hashtags stratégiques à la fin de la description pour améliorer la recherche. "
+    "Développer un résumé clair et attrayant du contenu de la vidéo dans les premières lignes. "
+    "Inclure des phrases contenant des mots-clés secondaires et des compléments pertinents. "
+    "Utilisation des bonnes pratiques SEO : Respecter une longueur idéale entre 400 et 500 caractères pour maximiser la visibilité dans les résultats de recherche. "
+    "Utiliser un langage clair, simple et engageant. Éviter les descriptions vagues, génériques ou trop répétitives. "
+    "Ajouter des éléments attractifs : Mettre en avant un aspect unique de la vidéo, une promesse claire ou un avantage spécifique (ex. : 'Apprenez en 5 minutes', 'Sans expérience'). "
+    "Poser une question pour inciter à l’engagement dans les commentaires ou à cliquer sur la vidéo. "
+    "Adapter au format vidéo et à l'audience : Pour des tutoriels, commencer par 'Comment...', 'Découvrez...', 'Guide pour...'. "
+    "Pour des classements ou listes, utiliser 'Top X', 'Les X meilleurs...'. Pour des analyses ou actualités, inclure des termes comme '2024', 'Tendances', 'Analyse'. "
+    "Ajouter des appels à l’action : Inclure des CTA (Call To Action) pour inviter les spectateurs à liker, s’abonner ou visiter un lien spécifique. "
+    "Votre priorité est de produire des descriptions engageantes et performantes en termes de SEO, tout en captant l’intérêt des spectateurs."
+    "Réponds UNIQUEMENT avec la Réponse."
 
-# Streamlit UI
-st.title("Analyse Marque / Hors Marque")
+)
 
-# Step 1: Upload XLSX file
-uploaded_file = st.file_uploader("Upload your XLSX file", type=["xlsx"])
-if uploaded_file:
-    df = pd.read_excel(uploaded_file)
+    optimized_description = GPT35(prompt, system_message, api_key)
+    return optimized_description
 
-    # Ensure necessary columns exist
-    if "Keyword" in df.columns and "Position" in df.columns and "Search Volume" in df.columns:
-        # Step 2: Input regex for "Marque"
-        col1, col2 = st.columns(2)
-        with col1:
-            regex_pattern = st.text_input("Enter regex pattern for 'Marque'", "regex-friendly .*")
-            selected_category = st.selectbox("Select Category", ["All"] + ["Top 1", "Position 2-3", "Position 4-5", "Position 6-10", "Position 11-20", "21+"])
-            keyword = st.text_input("Enter Keyword (regex supported)")
+def get_top_videos(api_key: str, query: str, language: str, max_results: int = 5) -> Optional[List[dict]]: 
+    url = f"https://www.googleapis.com/youtube/v3/search?part=snippet&q={query}&type=video&maxResults={max_results}&relevanceLanguage={language}&key={api_key}"
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        video_items = response.json().get('items', [])
+        
+        video_details = []
+        for item in video_items:
+            video_id = item['id']['videoId']
+            video_url = f"https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&id={video_id}&key={api_key}"
+            try:
+                video_response = requests.get(video_url)
+                video_response.raise_for_status()
+                video_data = video_response.json()
+                video_details.append(video_data)
+            except requests.RequestException:
+                print("Error fetching transcript:")  # Log the error
+                continue  # Skip to the next video
 
-        # Step 3: Process data
-        processed_data, summary = process_data(df, regex_pattern)
+        return video_details
+    except requests.RequestException as e:
+        print(f"Error fetching videos: {e}")
+        return None
 
-        # Filter data based on selected category and keyword
-        filtered_data = processed_data.copy()
-        if selected_category != "All":
-            filtered_data = filtered_data[filtered_data['Category'] == selected_category]
-        if keyword:
-            filtered_data = filtered_data[filtered_data['Keyword'].str.contains(keyword, case=False, na=False)]
+def get_search_suggestions(api_key: str, query: str) -> Optional[List[str]]:
+    url = f"https://suggestqueries.google.com/complete/search?client=firefox&ds=yt&q={query}"
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        suggestions = response.json()[1]
+        return suggestions
+    except requests.RequestException as e:
+        print(f"Error fetching search suggestions: {e}")
+        return None
 
-        # Display summary table
-        with col2:
-            st.write("Summary Table:")
-            summary_table = filtered_data.groupby(['Category', 'Marque/Hors Marque']).size().unstack(fill_value=0).reindex(["Top 1", "Position 2-3", "Position 4-5", "Position 6-10", "Position 11-20", "21+"], fill_value=0)
-            st.dataframe(summary_table)
+def analyze_video_content(video_id: str, language: str = 'fr') -> str:
+    try:
+        # Try to get the transcript in the specified language
+        transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=[language])
+        text = ' '.join([entry['text'] for entry in transcript])
+        
+        return text
+    except Exception as e:
+        print(f"Error fetching transcript: {e}")
+        return ""
 
-        # Display data for Marque and Hors Marque side by side
-        col1, col2 = st.columns(2)
-        with col1:
-            st.write("Data for Marque:")
-            marque_data = filtered_data[filtered_data['Marque/Hors Marque'] == 'Marque']
-            st.dataframe(marque_data)
-        with col2:
-            st.write("Data for Hors Marque:")
-            hors_marque_data = filtered_data[filtered_data['Marque/Hors Marque'] == 'Hors Marque']
-            st.dataframe(hors_marque_data)
+def process_keyword(api_key: str, openai_key: str, keyword: str, language: str, max_results: int) -> pd.DataFrame:
+    data = []
+    suggestions = get_search_suggestions(api_key, keyword)
+    top_videos = get_top_videos(api_key, keyword, language, max_results)
+    if top_videos:
+        for i, video in enumerate(top_videos, 1):
+            video_data = {
+                "Original Title": video['snippet']['title'],
+                "Optimized Title": generate_optimized_title(openai_key, video['snippet']['title']),
+                "Original Description": video['snippet']['description'],
+                "Optimized Description": generate_optimized_description(openai_key, video['snippet']['description']),
+                "Views": video['statistics']['viewCount'],
+                "Length": video['contentDetails']['duration'],
+                "Published at": video['snippet']['publishedAt'],
+                "Comments": video['statistics']['commentCount'],
+                "URL": f"https://www.youtube.com/watch?v={video['id']}",
+                "Category": video['snippet']['categoryId'],
+                "Channel": video['snippet']['channelTitle'],
+                "Transcript": analyze_video_content(video['id'], language) if i <= max_results else ""
+            }
+            data.append(video_data)
+    return pd.DataFrame(data)
 
-        # Add download button
-        csv = filtered_data.to_csv(index=False).encode('utf-8')
+st.title("YouTube SEO Video Scraper")
+
+api_key = st.text_input("Enter your YouTube API Key")
+openai_key = st.text_input("Enter your OpenAI API Key")
+keyword = st.text_input("Enter a keyword to fetch top videos")
+language = st.selectbox("Select language", ["en", "fr"])
+max_results = st.slider("Select number of videos to scrape", 1, 10, 5)
+
+if st.button("Fetch Videos"):
+    if api_key and openai_key and keyword:
+        df = process_keyword(api_key, openai_key, keyword, language, max_results)
+        st.dataframe(df)
         st.download_button(
-            label="Download data as CSV",
-            data=csv,
-            file_name='processed_data.csv',
-            mime='text/csv',
-        )
-
-        # Step 5: Export processed data
-        st.download_button(
-            label="Download Processed Data",
-            data=export_to_excel(filtered_data, summary),
-            file_name="processed_data.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            label="Download data as Excel",
+            data=df.to_excel(index=False),
+            file_name='youtube_videos.xlsx'
         )
     else:
-        st.error("The uploaded file must contain 'Keyword', 'Position', and 'Search Volume' columns.")
+        st.error("Please provide all required inputs.")
