@@ -1,7 +1,4 @@
-requests==2.26.0
-nltk==3.6.3
-textblob==0.15.3
-youtube_transcript_api==0.4.1
-streamlit
+requests
+nltk
+youtube_transcript_api
 pillow
-
